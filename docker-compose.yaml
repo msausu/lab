@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: lab_db
+    environment:
+      POSTGRES_USER: lab
+      POSTGRES_PASSWORD: lab
+      POSTGRES_DB: labdb
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U lab -d labdb"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  migrate:
+    image: flyway/flyway:12-alpine
+    container_name: lab_migrate
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: >
+      -connectRetries=10
+      -url=jdbc:postgresql://lab_db:5432/labdb
+      -user=lab
+      -password=lab
+      -locations=filesystem:/flyway/sql
+      migrate
+    volumes:
+      - ./db/migrations:/flyway/sql
