@@ -3,7 +3,7 @@
 ## Run
 
 ```bash
-docker-compose up
+docker-compose up  # or podman-compose up
 ```
 
 Database will be available at:

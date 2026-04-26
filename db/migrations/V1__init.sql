@@ -1,6 +1,4 @@
 -- Enable UUID support
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-
 -- =========================
 -- ENUMS
 -- =========================
@@ -13,22 +11,22 @@ CREATE TYPE measurement_type AS ENUM ('NUMERIC', 'CATEGORICAL', 'TEXT');
 -- RESEARCHERS
 -- =========================
 CREATE TABLE researchers (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     role TEXT NOT NULL,
-    created_at TIMESTAMP DEFAULT now()
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- =========================
 -- PROJECTS
 -- =========================
 CREATE TABLE projects (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     title TEXT NOT NULL,
     description TEXT,
     status project_status NOT NULL DEFAULT 'PLANNING',
-    created_at TIMESTAMP DEFAULT now()
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Many-to-many: researchers <-> projects
@@ -42,30 +40,30 @@ CREATE TABLE project_researchers (
 -- EXPERIMENTS
 -- =========================
 CREATE TABLE experiments (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     project_id UUID NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     title TEXT NOT NULL,
     hypothesis TEXT,
     status experiment_status DEFAULT 'PLANNING',
-    start_date DATE,
-    end_date DATE,
+    start_date TIMESTAMPTZ,
+    end_date TIMESTAMPTZ,
 
     -- self reference (lineage)
     parent_experiment_id UUID REFERENCES experiments(id),
 
-    created_at TIMESTAMP DEFAULT now()
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- =========================
 -- SAMPLES
 -- =========================
 CREATE TABLE samples (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    external_id TEXT UNIQUE NOT NULL,
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    external_id TEXT UNIQUE NOT NULL, -- The unique identifier mentioned in spec
     specimen_type TEXT NOT NULL,
-    collected_at TIMESTAMP,
+    collected_at TIMESTAMPTZ,
     storage_location TEXT,
-    created_at TIMESTAMP DEFAULT now()
+    created_at TIMESTAMPTZ DEFAULT now()
 );
 
 -- Many-to-many: experiments <-> samples
@@ -79,7 +77,7 @@ CREATE TABLE experiment_samples (
 -- MEASUREMENTS
 -- =========================
 CREATE TABLE measurements (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     experiment_id UUID NOT NULL REFERENCES experiments(id) ON DELETE CASCADE,
     sample_id UUID REFERENCES samples(id),
 
@@ -98,10 +96,10 @@ CREATE TABLE measurements (
     -- extensibility (future-proofing)
     extra JSONB,
 
-    measured_at TIMESTAMP NOT NULL,
+    measured_at TIMESTAMPTZ NOT NULL,
     notes TEXT,
 
-    created_at TIMESTAMP DEFAULT now(),
+    created_at TIMESTAMPTZ DEFAULT now(),
 
     -- Ensure only one value column is used
     CONSTRAINT one_value_check CHECK (
